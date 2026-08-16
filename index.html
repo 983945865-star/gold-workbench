@@ -243,16 +243,24 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
 
 /* ============== 设备标签 ============== */
 .device-bar {
-  display: flex; gap: 6px; align-items: center;
+  display: flex; flex-direction: column;
+  gap: 8px;
   padding: 10px 12px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   margin-bottom: 16px;
-  flex-wrap: wrap;
 }
-.device-bar::-webkit-scrollbar { display: none; }
+.device-row {
+  display: flex; gap: 6px; align-items: center;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.device-row::-webkit-scrollbar { display: none; }
 .device-bar .chip {
   padding: 7px 14px;
   border-radius: 8px;
@@ -1393,29 +1401,48 @@ document.addEventListener('click', e => {
 /* ================================================================
    渲染：工作台
 ================================================================ */
+function createDeviceChip(dev) {
+  const chip = document.createElement('button');
+  chip.className = 'chip' + (state.currentDeviceId === dev.id ? ' active' : '');
+  chip.dataset.devid = dev.id;
+  chip.draggable = true;
+  chip.innerHTML = `<span class="drag-handle">⋮⋮</span><span class="dot ${dev.enabled ? '' : 'off'}"></span>${escapeHtml(dev.name)}`;
+  chip.onclick = () => switchDevice(dev.id);
+  chip.ondblclick = () => openDeviceSettings(dev.id);
+  chip.addEventListener('dragstart', e => deviceDragStart(e, dev.id));
+  chip.addEventListener('dragover', e => deviceDragOver(e, dev.id));
+  chip.addEventListener('dragleave', e => deviceDragLeave(e));
+  chip.addEventListener('drop', e => deviceDrop(e, dev.id));
+  chip.addEventListener('dragend', deviceDragEnd);
+  // 触摸拖拽
+  chip.addEventListener('touchstart', e => deviceTouchStart(e, dev.id), { passive: false });
+  chip.addEventListener('touchmove', deviceTouchMove, { passive: false });
+  chip.addEventListener('touchend', deviceTouchEnd);
+  chip.addEventListener('touchcancel', deviceTouchEnd);
+  return chip;
+}
+function deviceRowType(dev) {
+  const n = (dev.name || '').toLowerCase();
+  if (n.includes('苹果')) return 'apple';
+  if (n.includes('安卓')) return 'android';
+  return 'apple'; // 未识别默认归入苹果行
+}
 function renderDeviceBar() {
   const bar = document.getElementById('deviceBar');
   bar.innerHTML = '';
+  const appleRow = document.createElement('div');
+  appleRow.className = 'device-row';
+  appleRow.dataset.row = 'apple';
+  const androidRow = document.createElement('div');
+  androidRow.className = 'device-row';
+  androidRow.dataset.row = 'android';
+
   state.devices.forEach(dev => {
-    const chip = document.createElement('button');
-    chip.className = 'chip' + (state.currentDeviceId === dev.id ? ' active' : '');
-    chip.dataset.devid = dev.id;
-    chip.draggable = true;
-    chip.innerHTML = `<span class="drag-handle">⋮⋮</span><span class="dot ${dev.enabled ? '' : 'off'}"></span>${escapeHtml(dev.name)}`;
-    chip.onclick = () => switchDevice(dev.id);
-    chip.ondblclick = () => openDeviceSettings(dev.id);
-    chip.addEventListener('dragstart', e => deviceDragStart(e, dev.id));
-    chip.addEventListener('dragover', e => deviceDragOver(e, dev.id));
-    chip.addEventListener('dragleave', e => deviceDragLeave(e));
-    chip.addEventListener('drop', e => deviceDrop(e, dev.id));
-    chip.addEventListener('dragend', deviceDragEnd);
-    // 触摸拖拽
-    chip.addEventListener('touchstart', e => deviceTouchStart(e, dev.id), { passive: false });
-    chip.addEventListener('touchmove', deviceTouchMove, { passive: false });
-    chip.addEventListener('touchend', deviceTouchEnd);
-    chip.addEventListener('touchcancel', deviceTouchEnd);
-    bar.appendChild(chip);
+    const chip = createDeviceChip(dev);
+    if (deviceRowType(dev) === 'android') androidRow.appendChild(chip);
+    else appleRow.appendChild(chip);
   });
+
   const add = document.createElement('button');
   add.className = 'add-chip';
   add.style.background = 'var(--primary)';
@@ -1425,7 +1452,10 @@ function renderDeviceBar() {
   add.style.marginLeft = 'auto';
   add.textContent = '+ 新建设备';
   add.onclick = () => addNewDevice();
-  bar.appendChild(add);
+  androidRow.appendChild(add);
+
+  bar.appendChild(appleRow);
+  bar.appendChild(androidRow);
 }
 
 /* ---- 设备标签拖拽排序 ---- */
@@ -1441,15 +1471,16 @@ function deviceDragOver(e, targetId) {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
   if (targetId !== dragDevId) {
-    const bar = document.getElementById('deviceBar');
-    const chips = [...bar.querySelectorAll('.chip[data-devid]')];
+    const dragChip = document.querySelector(`.chip[data-devid="${dragDevId}"]`);
+    const row = dragChip?.closest('.device-row');
+    if (!row) return;
+    const chips = [...row.querySelectorAll('.chip[data-devid]')];
     const dragIdx = chips.findIndex(c => c.dataset.devid === dragDevId);
     const targetIdx = chips.findIndex(c => c.dataset.devid === targetId);
     if (dragIdx >= 0 && targetIdx >= 0) {
-      const dragChip = chips[dragIdx];
       const targetChip = chips[targetIdx];
-      if (dragIdx < targetIdx) bar.insertBefore(dragChip, targetChip.nextSibling);
-      else bar.insertBefore(dragChip, targetChip);
+      if (dragIdx < targetIdx) row.insertBefore(dragChip, targetChip.nextSibling);
+      else row.insertBefore(dragChip, targetChip);
     }
   }
 }
@@ -1468,7 +1499,7 @@ function deviceDragEnd(e) {
 }
 function deviceReorderFromDOM() {
   const bar = document.getElementById('deviceBar');
-  const ids = [...bar.querySelectorAll('.chip[data-devid]')].map(c => c.dataset.devid);
+  const ids = [...bar.querySelectorAll('.device-row .chip[data-devid]')].map(c => c.dataset.devid);
   const map = new Map(state.devices.map(d => [d.id, d]));
   const ordered = ids.map(id => map.get(id)).filter(Boolean);
   state.devices.forEach(d => { if (!ordered.includes(d)) ordered.push(d); });
@@ -1503,15 +1534,16 @@ function deviceTouchMove(e) {
   const target = document.elementFromPoint(t.clientX, t.clientY);
   const chip = target?.closest('.chip[data-devid]');
   if (chip && chip.dataset.devid !== dragDevId) {
-    const bar = document.getElementById('deviceBar');
-    const chips = [...bar.querySelectorAll('.chip[data-devid]')];
+    const row = chip.closest('.device-row');
+    const dragChip = document.querySelector(`.chip[data-devid="${dragDevId}"]`);
+    if (!row || !dragChip || row !== dragChip.closest('.device-row')) return;
+    const chips = [...row.querySelectorAll('.chip[data-devid]')];
     const dragIdx = chips.findIndex(c => c.dataset.devid === dragDevId);
     const targetIdx = chips.findIndex(c => c.dataset.devid === chip.dataset.devid);
     if (dragIdx >= 0 && targetIdx >= 0) {
-      const dragChip = chips[dragIdx];
       const targetChip = chips[targetIdx];
-      if (dragIdx < targetIdx) bar.insertBefore(dragChip, targetChip.nextSibling);
-      else bar.insertBefore(dragChip, targetChip);
+      if (dragIdx < targetIdx) row.insertBefore(dragChip, targetChip.nextSibling);
+      else row.insertBefore(dragChip, targetChip);
       if (navigator.vibrate) navigator.vibrate(8);
     }
   }
