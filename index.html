@@ -2419,6 +2419,9 @@ function deviceIncomeMonth(ym) {
 }
 
 function renderStats() {
+  // 先把当前实时数据快照进 history，确保本月累计包含今天最新编辑
+  snapshotCurrentDate();
+
   // 设备下拉
   const sel = document.getElementById('statDevice');
   const cur = sel.value;
