@@ -1386,6 +1386,17 @@ function loadDateSnapshot(date) {
     dev.apps.forEach(app => { if (s[app.id]) Object.assign(app, s[app.id]); });
   });
 }
+function maybeRollNewDay() {
+  // 自动日结：如果上次关闭时不是今天，先把旧日期快照保存，再把昨天的 today 移到 yesterday，today 清零
+  const today = todayStr();
+  if (!state.currentDate || state.currentDate >= today) return;
+  snapshotCurrentDate();
+  state.devices.forEach(dev => {
+    dev.apps.forEach(app => { app.yesterday = app.today || 0; app.today = 0; });
+  });
+  state.currentDate = today;
+  snapshotCurrentDate();
+}
 
 /* ================================================================
    视图切换
@@ -1680,11 +1691,20 @@ function renderMetrics() {
     if (!d.enabled) return;
     d.apps.forEach(a => {
       tI += calcIncomeApp(a, a.today);
-      yI += calcIncomeApp(a, a.yesterday);
       if (a.status === '正常') ok++; else abn++;
       stc[a.status] = (stc[a.status] || 0) + 1;
     });
   });
+  // 昨日总收益：优先读取前一天历史快照（快照里的 today 就是昨天的实际收益）
+  const yestDate = dateAdd(state.currentDate, -1);
+  const yestFromHistory = dayIncome(yestDate);
+  if (yestFromHistory != null) yI = yestFromHistory;
+  else {
+    state.devices.forEach(d => {
+      if (!d.enabled) return;
+      d.apps.forEach(a => { yI += calcIncomeApp(a, a.yesterday); });
+    });
+  }
   // 本月收益累计：历史快照（按当前比例折算，不含今天）+ 今日实时收益
   const rates = rateLookup();
   Object.entries(state.history).forEach(([ds, snap]) => {
@@ -2986,6 +3006,7 @@ function scheduleAutoPush() {
 ================================================================ */
 load();
 state.selected = new Set();
+maybeRollNewDay();
 snapshotCurrentDate();
 save();
 renderAll();
