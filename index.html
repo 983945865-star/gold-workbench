@@ -988,8 +988,13 @@ table.app-table { width: 100%; border-collapse: collapse; min-width: 620px; }
     </div>
 
     <div class="card" style="margin-top:16px;">
-      <div class="card-head"><h3>APP 收益排名（区间累计）</h3></div>
+      <div class="card-head"><h3>APP 收益排名（本月累计）</h3></div>
       <div class="card-body" id="rankList"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-head"><h3>设备收益排名（本月累计）</h3></div>
+      <div class="card-body" id="deviceRankList"></div>
     </div>
   </div>
 </div>
@@ -2396,6 +2401,22 @@ function appIncomeMonth(ym, deviceId) {
   });
   return data;
 }
+function deviceIncomeMonth(ym) {
+  // 当月各设备累计收益（基于历史快照，自动包含未来新增设备）
+  const data = {};
+  Object.keys(state.history).forEach(ds => {
+    if (!ds.startsWith(ym)) return;
+    const snap = state.history[ds];
+    state.devices.forEach(dev => {
+      if (!dev.enabled) return;
+      const s = snap[dev.id]; if (!s) return;
+      let total = 0;
+      Object.values(s).forEach(a => { total += calcIncomeApp(a, a.today); });
+      if (total > 0 || data[dev.name] != null) data[dev.name] = (data[dev.name] || 0) + total;
+    });
+  });
+  return data;
+}
 
 function renderStats() {
   // 设备下拉
@@ -2460,8 +2481,10 @@ function renderStats() {
   document.getElementById('pieMonthLabel').textContent = `当月（${state.currentDate.slice(0, 7)}）`;
   document.getElementById('pieMonth').innerHTML = donutSVG(monthData, '当月累计');
 
-  // APP 排名（区间累计）
-  const acc = appIncomeInRange(days, devId);
+  const ym = state.currentDate.slice(0, 7);
+
+  // APP 排名（本月累计）
+  const acc = appIncomeMonth(ym, devId);
   const ranked = Object.entries(acc).sort((a, b) => b[1] - a[1]);
   const max = ranked.length ? ranked[0][1] : 1;
   document.getElementById('rankList').innerHTML = ranked.length ? `
@@ -2470,6 +2493,20 @@ function renderStats() {
         <span class="idx">${i + 1}</span>
         <span>${escapeHtml(name)}</span>
         <div class="bar-wrap"><div class="bar-fill" style="width:${(v / max * 100).toFixed(1)}%"></div></div>
+        <span class="val">${fmtMoney(v)}</span>
+      </div>`).join('')}</div>` :
+    '<div class="empty"><div class="icon">◎</div>暂无历史数据</div>';
+
+  // 设备排名（本月累计）
+  const deviceAcc = deviceIncomeMonth(ym);
+  const deviceRanked = Object.entries(deviceAcc).sort((a, b) => b[1] - a[1]);
+  const deviceMax = deviceRanked.length ? deviceRanked[0][1] : 1;
+  document.getElementById('deviceRankList').innerHTML = deviceRanked.length ? `
+    <div class="rank-list">${deviceRanked.map(([name, v], i) => `
+      <div class="row">
+        <span class="idx">${i + 1}</span>
+        <span>${escapeHtml(name)}</span>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${(v / deviceMax * 100).toFixed(1)}%"></div></div>
         <span class="val">${fmtMoney(v)}</span>
       </div>`).join('')}</div>` :
     '<div class="empty"><div class="icon">◎</div>暂无历史数据</div>';
