@@ -2481,8 +2481,6 @@ function renderStats() {
   document.getElementById('pieMonthLabel').textContent = `当月（${state.currentDate.slice(0, 7)}）`;
   document.getElementById('pieMonth').innerHTML = donutSVG(monthData, '当月累计');
 
-  const ym = state.currentDate.slice(0, 7);
-
   // APP 排名（本月累计）
   const acc = appIncomeMonth(ym, devId);
   const ranked = Object.entries(acc).sort((a, b) => b[1] - a[1]);
