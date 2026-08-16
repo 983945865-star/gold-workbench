@@ -1288,7 +1288,7 @@ function freshState() {
   });
   for (let i = 15; i >= 1; i--) {
     const dt = new Date(); dt.setDate(dt.getDate() - i);
-    const ds = dt.toISOString().slice(0, 10);
+    const ds = localDateStr(dt);
     st.history[ds] = {};
     st.devices.forEach(d => {
       st.history[ds][d.id] = {};
@@ -1313,7 +1313,12 @@ let state;
 /* ================================================================
    工具
 ================================================================ */
-function todayStr() { return new Date().toISOString().slice(0, 10); }
+function localDateStr(d) {
+  const date = d || new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${p(date.getMonth()+1)}-${p(date.getDate())}`;
+}
+function todayStr() { return localDateStr(); }
 function nowStr() {
   const d = new Date(), p = n => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
@@ -1326,7 +1331,12 @@ function fmtMoney(n) { return '¥' + (Math.round(n * 100) / 100).toLocaleString(
 function escapeHtml(s) {
   return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-function dateAdd(ds, n) { const d = new Date(ds); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
+function dateAdd(ds, n) {
+  const [y, m, d] = ds.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + n);
+  return localDateStr(date);
+}
 
 function save() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(stripIcons(state))); }
