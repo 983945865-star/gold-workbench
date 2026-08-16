@@ -1404,11 +1404,14 @@ document.addEventListener('click', e => {
    渲染：工作台
 ================================================================ */
 function createDeviceChip(dev) {
+  const isActive = state.currentDeviceId === dev.id;
   const chip = document.createElement('button');
-  chip.className = 'chip' + (state.currentDeviceId === dev.id ? ' active' : '');
+  chip.className = 'chip' + (isActive ? ' active' : '');
   chip.dataset.devid = dev.id;
-  chip.draggable = true;
-  chip.innerHTML = `<span class="drag-handle">⋮⋮</span><span class="dot ${dev.enabled ? '' : 'off'}"></span>${escapeHtml(dev.name)}`;
+  // 只有当前选中的设备才显示拖动图标并允许拖拽
+  chip.draggable = isActive;
+  const handle = isActive ? '<span class="drag-handle">⋮⋮</span>' : '';
+  chip.innerHTML = `${handle}<span class="dot ${dev.enabled ? '' : 'off'}"></span>${escapeHtml(dev.name)}`;
   chip.onclick = () => switchDevice(dev.id);
   chip.ondblclick = () => openDeviceSettings(dev.id);
   chip.addEventListener('dragstart', e => deviceDragStart(e, dev.id));
@@ -1416,7 +1419,7 @@ function createDeviceChip(dev) {
   chip.addEventListener('dragleave', e => deviceDragLeave(e));
   chip.addEventListener('drop', e => deviceDrop(e, dev.id));
   chip.addEventListener('dragend', deviceDragEnd);
-  // 触摸拖拽
+  // 触摸拖拽（只有点中 drag-handle 时才触发）
   chip.addEventListener('touchstart', e => deviceTouchStart(e, dev.id), { passive: false });
   chip.addEventListener('touchmove', deviceTouchMove, { passive: false });
   chip.addEventListener('touchend', deviceTouchEnd);
