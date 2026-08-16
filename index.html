@@ -255,8 +255,10 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
 .device-row {
   display: flex; gap: 6px; align-items: center;
   overflow-x: auto;
+  overflow-y: hidden;
   flex-wrap: nowrap;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
