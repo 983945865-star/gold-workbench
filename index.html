@@ -1432,6 +1432,18 @@ function deviceRowType(dev) {
   if (n.includes('安卓')) return 'android';
   return 'apple'; // 未识别默认归入苹果行
 }
+function createAddChip() {
+  const add = document.createElement('button');
+  add.className = 'add-chip';
+  add.style.background = 'var(--primary)';
+  add.style.color = '#fff';
+  add.style.border = 'none';
+  add.style.fontWeight = '600';
+  add.style.marginLeft = 'auto';
+  add.textContent = '+ 新建设备';
+  add.onclick = () => addNewDevice();
+  return add;
+}
 function renderDeviceBar() {
   const bar = document.getElementById('deviceBar');
   bar.innerHTML = '';
@@ -1448,16 +1460,9 @@ function renderDeviceBar() {
     else appleRow.appendChild(chip);
   });
 
-  const add = document.createElement('button');
-  add.className = 'add-chip';
-  add.style.background = 'var(--primary)';
-  add.style.color = '#fff';
-  add.style.border = 'none';
-  add.style.fontWeight = '600';
-  add.style.marginLeft = 'auto';
-  add.textContent = '+ 新建设备';
-  add.onclick = () => addNewDevice();
-  androidRow.appendChild(add);
+  // 苹果行、安卓行末尾各放一个「+ 新建设备」
+  appleRow.appendChild(createAddChip());
+  androidRow.appendChild(createAddChip());
 
   bar.appendChild(appleRow);
   bar.appendChild(androidRow);
