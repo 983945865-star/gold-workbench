@@ -250,11 +250,7 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   margin-bottom: 16px;
-  overflow-x: auto;
-  flex-wrap: nowrap;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  flex-wrap: wrap;
 }
 .device-bar::-webkit-scrollbar { display: none; }
 .device-bar .chip {
@@ -289,6 +285,7 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
   color: var(--text-dim);
   cursor: pointer; font-size: 13px; background: transparent;
   flex-shrink: 0; white-space: nowrap;
+  margin-left: auto;
 }
 .device-bar .add-chip:hover { color: var(--primary); border-color: var(--primary); }
 .device-bar .chip-dragging { opacity: .4; }
