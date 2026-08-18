@@ -275,6 +275,8 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
   display: inline-flex; align-items: center; gap: 7px;
   transition: all .15s;
   flex-shrink: 0;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
 }
 .device-bar .chip:hover { color: var(--text); border-color: var(--border); }
 .device-bar .chip.active {
@@ -1468,8 +1470,17 @@ function createDeviceChip(dev) {
   chip.draggable = isActive;
   const handle = isActive ? '<span class="drag-handle">⋮⋮</span>' : '';
   chip.innerHTML = `${handle}<span class="dot ${dev.enabled ? '' : 'off'}"></span>${escapeHtml(dev.name)}`;
-  chip.onclick = () => switchDevice(dev.id);
-  chip.ondblclick = () => openDeviceSettings(dev.id);
+  chip.onclick = () => {
+    const now = Date.now();
+    // 300ms 内连续点击同一设备视为双击/双点，打开编辑
+    if (state.currentDeviceId === dev.id && lastDeviceClick.id === dev.id && now - lastDeviceClick.time < 300) {
+      lastDeviceClick = { id: null, time: 0 };
+      openDeviceSettings(dev.id);
+      return;
+    }
+    lastDeviceClick = { id: dev.id, time: now };
+    switchDevice(dev.id);
+  };
   chip.addEventListener('dragstart', e => deviceDragStart(e, dev.id));
   chip.addEventListener('dragover', e => deviceDragOver(e, dev.id));
   chip.addEventListener('dragleave', e => deviceDragLeave(e));
@@ -1526,6 +1537,7 @@ function renderDeviceBar() {
 
 /* ---- 设备标签拖拽排序 ---- */
 let dragDevId = null, dragTouchId = null, dragTouchActive = false, dragTouchStartX = 0, dragTouchStartY = 0;
+let lastDeviceClick = { id: null, time: 0 };
 
 function deviceDragStart(e, devId) {
   dragDevId = devId;
