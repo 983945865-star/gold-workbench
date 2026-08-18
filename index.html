@@ -1384,12 +1384,13 @@ function snapshotCurrentDate() {
 }
 function loadDateSnapshot(date) {
   const snap = state.history[date];
-  if (!snap) return;
+  if (!snap) return false;
   state.devices.forEach(dev => {
     const s = snap[dev.id];
     if (!s) return;
     dev.apps.forEach(app => { if (s[app.id]) Object.assign(app, s[app.id]); });
   });
+  return true;
 }
 function maybeRollNewDay() {
   // 自动日结：如果上次关闭时不是今天，先把旧日期快照保存，再把昨天的 today 移到 yesterday，today 清零
@@ -2273,7 +2274,13 @@ function changeDate(ds) {
   if (!ds) return;
   snapshotCurrentDate();
   state.currentDate = ds;
-  loadDateSnapshot(ds);
+  const hadSnap = loadDateSnapshot(ds);
+  if (!hadSnap) {
+    // 目标日期没有历史记录，视为新的一天：清空当天数据和运行状态
+    state.devices.forEach(d => d.apps.forEach(a => {
+      a.today = 0; a.yesterday = 0; a.statusTime = '';
+    }));
+  }
   state.selected.clear();
   save(); renderAll();
   if (document.getElementById('view-stats').classList.contains('active')) renderStats();
