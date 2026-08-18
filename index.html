@@ -2276,9 +2276,9 @@ function changeDate(ds) {
   state.currentDate = ds;
   const hadSnap = loadDateSnapshot(ds);
   if (!hadSnap) {
-    // 目标日期没有历史记录，视为新的一天：清空当天数据和运行状态
+    // 目标日期没有历史记录，视为新的一天：清空当天金币（保留昨日金币）和状态时间
     state.devices.forEach(d => d.apps.forEach(a => {
-      a.today = 0; a.yesterday = 0; a.statusTime = '';
+      a.today = 0; a.statusTime = '';
     }));
   }
   state.selected.clear();
