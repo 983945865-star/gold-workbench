@@ -2276,9 +2276,10 @@ function changeDate(ds) {
   state.currentDate = ds;
   const hadSnap = loadDateSnapshot(ds);
   if (!hadSnap) {
-    // 目标日期没有历史记录，视为新的一天：清空当天金币（保留昨日金币）和状态时间
+    // 目标日期没有历史记录，视为新的一天：清空当天金币（保留昨日金币）并恢复默认状态
+    const defaultStatus = state.statuses[0].name;
     state.devices.forEach(d => d.apps.forEach(a => {
-      a.today = 0; a.statusTime = '';
+      a.today = 0; a.status = defaultStatus; a.statusTime = '';
     }));
   }
   state.selected.clear();
