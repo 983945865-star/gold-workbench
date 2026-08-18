@@ -1546,6 +1546,24 @@ function renderDeviceBar() {
   if (rowScroll.android != null) androidRow.scrollLeft = rowScroll.android;
 }
 
+// 仅更新设备栏的激活态与拖拽手柄,不重建 DOM,避免切换设备时横滑跳动
+function updateDeviceBarActive() {
+  document.querySelectorAll('.device-bar .chip[data-devid]').forEach(c => {
+    const on = c.dataset.devid === state.currentDeviceId;
+    c.classList.toggle('active', on);
+    c.draggable = on;
+    let handle = c.querySelector('.drag-handle');
+    if (on && !handle) {
+      const h = document.createElement('span');
+      h.className = 'drag-handle';
+      h.textContent = '⋮⋮';
+      c.insertBefore(h, c.firstChild);
+    } else if (!on && handle) {
+      handle.remove();
+    }
+  });
+}
+
 /* ---- 设备标签拖拽排序 ---- */
 let dragDevId = null, dragTouchId = null, dragTouchActive = false, dragTouchStartX = 0, dragTouchStartY = 0;
 let lastDeviceClick = { id: null, time: 0 };
@@ -1651,7 +1669,12 @@ function switchDevice(id) {
   state.currentDeviceId = id;
   loadDateSnapshot(state.currentDate);
   state.selected.clear();
-  save(); renderAll();
+  save();
+  // 仅更新激活态,不重建设备栏 DOM,避免切换设备时横滑位置跳动
+  updateDeviceBarActive();
+  renderFilterPills();
+  renderTable();
+  renderMetrics();
 }
 
 function renderTable() {
