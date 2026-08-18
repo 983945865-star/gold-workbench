@@ -383,6 +383,14 @@ table.app-table { width: 100%; border-collapse: collapse; min-width: 620px; }
   font-size: 13px;
 }
 .app-table td.name-cell { text-align: center; padding-left: 0; }
+.app-table td.checkin-cell {
+  text-align: center; vertical-align: middle;
+  width: 48px; min-width: 44px;
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+  color: var(--good); font-size: 18px; font-weight: 700;
+}
+.app-table td.checkin-cell:active { background: var(--primary-soft); }
+.app-table td.checkin-cell .checkin-mark { line-height: 1; }
 .app-table td input.cell {
   width: 100%;
   border: 1px solid transparent;
@@ -908,6 +916,7 @@ table.app-table { width: 100%; border-collapse: collapse; min-width: 620px; }
               <th class="check-col" style="width:40px;"><input type="checkbox" id="headerCheck" onchange="toggleSelectAll(this.checked)"></th>
               <th style="width:56px;">图标</th>
               <th>APP 名称</th>
+              <th style="width:48px;">签到</th>
               <th>运行状态</th>
               <th>今日金币</th>
               <th class="hide-sm">昨日金币</th>
@@ -1269,7 +1278,7 @@ function freshState() {
   const mkApps = () => SAMPLE_APPS.map(a => ({
     id: genId(), name: a.name, emoji: a.emoji,
     today: a.today, yesterday: a.yesterday,
-    rate: a.rate || 0,
+    rate: a.rate || 0, checkedIn: false,
     status: a.status || '正常', statusTime: nowStr(), iconDataUrl: a.icon || '',
   }));
   const st = {
@@ -1306,6 +1315,7 @@ function freshState() {
           yesterday: Math.round(v * (0.9 + Math.random() * 0.2)),
           status: Math.random() < 0.85 ? '正常' : DEFAULT_STATUSES[1 + Math.floor(Math.random() * (DEFAULT_STATUSES.length - 1))].name,
           statusTime: ds + ' 12:00', iconDataUrl: a.iconDataUrl || '',
+          checkedIn: false,
         };
       });
     });
@@ -1378,7 +1388,7 @@ function snapshotCurrentDate() {
         name: app.name, emoji: app.emoji,
         today: app.today, yesterday: app.yesterday,
         status: app.status, statusTime: app.statusTime,
-        rate: app.rate,
+        rate: app.rate, checkedIn: !!app.checkedIn,
       };
     });
   });
@@ -1397,6 +1407,7 @@ function loadDateSnapshot(date) {
       app.yesterday = h.yesterday;
       app.status = h.status;
       app.statusTime = h.statusTime;
+      app.checkedIn = !!h.checkedIn;
       app.name = h.name;
       app.emoji = h.emoji;
     });
@@ -1409,7 +1420,7 @@ function maybeRollNewDay() {
   if (!state.currentDate || state.currentDate >= today) return;
   snapshotCurrentDate();
   state.devices.forEach(dev => {
-    dev.apps.forEach(app => { app.yesterday = app.today || 0; app.today = 0; });
+    dev.apps.forEach(app => { app.yesterday = app.today || 0; app.today = 0; app.checkedIn = false; });
   });
   state.currentDate = today;
   snapshotCurrentDate();
@@ -1667,6 +1678,7 @@ function renderTable() {
         </div>
       </td>
       <td class="name-cell"><input class="cell name-input" value="${escapeHtml(app.name)}" onchange="updateAppField('${app.id}','name',this.value)"></td>
+      <td class="checkin-cell" onclick="toggleCheckIn('${app.id}')" title="点击签到/取消签到">${app.checkedIn ? '<span class="checkin-mark">√</span>' : ''}</td>
       <td>
         <span class="status-tag" data-status="${escapeHtml(app.status)}" onclick="openStatusPicker('${app.id}')" style="background:${sInfo.fill};color:${sInfo.fill === sInfo.fg ? '#FFFFFF' : sInfo.fg};">
           ${sInfo.mark ? escapeHtml(sInfo.mark) + ' ' : ''}${escapeHtml(app.status)}
@@ -1688,7 +1700,7 @@ function renderTable() {
 
   document.getElementById('appTableFoot').innerHTML = `
     <tr>
-      <td colspan="4" style="text-align:left;padding-left:18px;">总计 · ${dev.apps.length} 个 APP（显示 ${shown.length}，已选 ${state.selected.size}）</td>
+      <td colspan="5" style="text-align:left;padding-left:18px;">总计 · ${dev.apps.length} 个 APP（显示 ${shown.length}，已选 ${state.selected.size}）</td>
       <td class="num big">${fmt(tC)}</td>
       <td class="num hide-sm" style="color:var(--text-dim);">${fmt(yC)}</td>
       <td class="num big">${tI.toFixed(2)}</td>
@@ -1834,9 +1846,9 @@ function refreshRowForApp(id) {
   const dHtml = Math.abs(d) < 0.005
     ? `<span style="color:var(--text-light)">—</span>`
     : `<span style="color:${d > 0 ? 'var(--good)' : 'var(--danger)'};font-weight:600">${d > 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(2)}</span>`;
-  tr.children[6].textContent = ti.toFixed(2);
-  tr.children[7].textContent = yi.toFixed(2);
-  tr.children[8].innerHTML = dHtml;
+  tr.children[7].textContent = ti.toFixed(2);
+  tr.children[8].textContent = yi.toFixed(2);
+  tr.children[9].innerHTML = dHtml;
   refreshTableTotals();
 }
 function refreshTableTotals() {
@@ -1853,13 +1865,12 @@ function refreshTableTotals() {
   const foot = document.getElementById('appTableFoot');
   if (foot) foot.innerHTML = `
     <tr>
-      <td colspan="4" style="text-align:left;padding-left:18px;">总计 · ${dev.apps.length} 个 APP（显示 ${shown.length}，已选 ${state.selected.size}）</td>
+      <td colspan="5" style="text-align:left;padding-left:18px;">总计 · ${dev.apps.length} 个 APP（显示 ${shown.length}，已选 ${state.selected.size}）</td>
       <td class="num big">${fmt(tC)}</td>
       <td class="num hide-sm" style="color:var(--text-dim);">${fmt(yC)}</td>
       <td class="num big">${tI.toFixed(2)}</td>
       <td class="num hide-sm" style="color:var(--text-dim);">${yI.toFixed(2)}</td>
       <td class="${dc}">${Math.abs(diff) < 0.005 ? '—' : (diff > 0 ? '▲ ' : '▼ ') + Math.abs(diff).toFixed(2)}</td>
-      <td></td>
     </tr>`;
 }
 function onRateInput(id, val) {
@@ -1883,6 +1894,13 @@ function updateAppField(id, field, val) {
   if (!app) return;
   app[field] = val.trim();
   scheduleSave();
+}
+function toggleCheckIn(id) {
+  const dev = state.devices.find(d => d.id === state.currentDeviceId);
+  const app = dev.apps.find(a => a.id === id);
+  if (!app) return;
+  app.checkedIn = !app.checkedIn;
+  save(); renderTable();
 }
 function deleteApp(id) {
   if (!confirm('确定删除该 APP？')) return;
@@ -2103,7 +2121,7 @@ function saveNewApp() {
   dev.apps.push({
     id: genId(), name,
     emoji: document.getElementById('appEmoji').value.trim() || '◇',
-    today: 0, yesterday: 0, rate: (!isNaN(rv) && rv >= 1) ? rv : 0,
+    today: 0, yesterday: 0, rate: (!isNaN(rv) && rv >= 1) ? rv : 0, checkedIn: false,
     status: document.getElementById('appInitStatus').value,
     statusTime: nowStr(), iconDataUrl: '',
   });
@@ -2290,7 +2308,7 @@ function changeDate(ds) {
     // 目标日期没有历史记录，视为新的一天：清空当天金币（保留昨日金币）并恢复默认状态
     const defaultStatus = state.statuses[0].name;
     state.devices.forEach(d => d.apps.forEach(a => {
-      a.today = 0; a.status = defaultStatus; a.statusTime = '';
+      a.today = 0; a.status = defaultStatus; a.statusTime = ''; a.checkedIn = false;
     }));
   }
   state.selected.clear();
@@ -2305,7 +2323,7 @@ function clearDataScope(scope) {
   const zeroCoins = () => state.devices.forEach(d => d.apps.forEach(a => { a.today = 0; a.yesterday = 0; }));
   const resetStatus = () => {
     const defaultStatus = state.statuses[0].name;
-    state.devices.forEach(d => d.apps.forEach(a => { a.status = defaultStatus; a.statusTime = ''; }));
+    state.devices.forEach(d => d.apps.forEach(a => { a.status = defaultStatus; a.statusTime = ''; a.checkedIn = false; }));
   };
   if (scope === 'today') {
     if (!confirm(`确定清除 ${state.currentDate} 当天的金币数据和运行状态？（APP 列表、兑换比例、目标等设置保留）`)) return;
