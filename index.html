@@ -1515,6 +1515,11 @@ function createAddChip() {
 }
 function renderDeviceBar() {
   const bar = document.getElementById('deviceBar');
+  // 保存当前各行的横向滚动位置，重建后恢复，避免点击设备时跳回最左
+  const rowScroll = {};
+  bar.querySelectorAll('.device-row').forEach(r => {
+    if (r.dataset.row) rowScroll[r.dataset.row] = r.scrollLeft;
+  });
   bar.innerHTML = '';
   const appleRow = document.createElement('div');
   appleRow.className = 'device-row';
@@ -1535,6 +1540,10 @@ function renderDeviceBar() {
 
   bar.appendChild(appleRow);
   bar.appendChild(androidRow);
+
+  // 恢复横向滚动位置
+  if (rowScroll.apple != null) appleRow.scrollLeft = rowScroll.apple;
+  if (rowScroll.android != null) androidRow.scrollLeft = rowScroll.android;
 }
 
 /* ---- 设备标签拖拽排序 ---- */
