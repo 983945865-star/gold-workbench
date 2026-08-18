@@ -1378,6 +1378,7 @@ function snapshotCurrentDate() {
         name: app.name, emoji: app.emoji,
         today: app.today, yesterday: app.yesterday,
         status: app.status, statusTime: app.statusTime,
+        rate: app.rate,
       };
     });
   });
@@ -1388,7 +1389,17 @@ function loadDateSnapshot(date) {
   state.devices.forEach(dev => {
     const s = snap[dev.id];
     if (!s) return;
-    dev.apps.forEach(app => { if (s[app.id]) Object.assign(app, s[app.id]); });
+    dev.apps.forEach(app => {
+      const h = s[app.id];
+      if (!h) return;
+      // 恢复金币、状态，但汇率保留当前设置（避免切日期改变当前 app 比例）
+      app.today = h.today;
+      app.yesterday = h.yesterday;
+      app.status = h.status;
+      app.statusTime = h.statusTime;
+      app.name = h.name;
+      app.emoji = h.emoji;
+    });
   });
   return true;
 }
@@ -2396,7 +2407,8 @@ function appIncomeToday(deviceId) {
   return data;
 }
 function appIncomeMonth(ym, deviceId) {
-  // 当月各 APP 累计收益（基于历史快照）
+  // 当月各 APP 累计收益（基于历史快照，按兑换比例折算）
+  const rates = rateLookup();
   const data = {};
   Object.keys(state.history).forEach(ds => {
     if (!ds.startsWith(ym)) return;
@@ -2404,13 +2416,18 @@ function appIncomeMonth(ym, deviceId) {
     state.devices.forEach(dev => {
       if (deviceId && dev.id !== deviceId) return;
       const s = snap[dev.id]; if (!s) return;
-      Object.values(s).forEach(a => { data[a.name] = (data[a.name] || 0) + calcIncomeApp(a, a.today); });
+      Object.entries(s).forEach(([appId, a]) => {
+        const key = a.name || appId;
+        const rate = rates[appId] || (+a.rate > 0 ? a.rate : state.globalRate);
+        data[key] = (data[key] || 0) + Math.round((parseFloat(a.today) || 0) / rate * 100) / 100;
+      });
     });
   });
   return data;
 }
 function deviceIncomeMonth(ym) {
-  // 当月各设备累计收益（基于历史快照，自动包含未来新增设备）
+  // 当月各设备累计收益（基于历史快照，按兑换比例折算，自动包含未来新增设备）
+  const rates = rateLookup();
   const data = {};
   Object.keys(state.history).forEach(ds => {
     if (!ds.startsWith(ym)) return;
@@ -2419,7 +2436,10 @@ function deviceIncomeMonth(ym) {
       if (!dev.enabled) return;
       const s = snap[dev.id]; if (!s) return;
       let total = 0;
-      Object.values(s).forEach(a => { total += calcIncomeApp(a, a.today); });
+      Object.entries(s).forEach(([appId, a]) => {
+        const rate = rates[appId] || (+a.rate > 0 ? a.rate : state.globalRate);
+        total += Math.round((parseFloat(a.today) || 0) / rate * 100) / 100;
+      });
       if (total > 0 || data[dev.name] != null) data[dev.name] = (data[dev.name] || 0) + total;
     });
   });
