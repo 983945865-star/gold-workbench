@@ -387,10 +387,17 @@ table.app-table { width: 100%; border-collapse: collapse; min-width: 620px; }
   text-align: center; vertical-align: middle;
   width: 48px; min-width: 44px;
   cursor: pointer; user-select: none; -webkit-user-select: none;
-  color: var(--good); font-size: 18px; font-weight: 700;
 }
 .app-table td.checkin-cell:active { background: var(--primary-soft); }
-.app-table td.checkin-cell .checkin-mark { line-height: 1; }
+.app-table td.checkin-cell .checkin-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 5px;
+  border: 1.5px solid var(--border); background: transparent;
+  color: #fff; font-size: 12px; font-weight: 700; line-height: 1;
+}
+.app-table td.checkin-cell .checkin-mark.on {
+  background: var(--good); border-color: var(--good);
+}
 .app-table td input.cell {
   width: 100%;
   border: 1px solid transparent;
@@ -1678,7 +1685,7 @@ function renderTable() {
         </div>
       </td>
       <td class="name-cell"><input class="cell name-input" value="${escapeHtml(app.name)}" onchange="updateAppField('${app.id}','name',this.value)"></td>
-      <td class="checkin-cell" onclick="toggleCheckIn('${app.id}')" title="点击签到/取消签到">${app.checkedIn ? '<span class="checkin-mark">√</span>' : ''}</td>
+      <td class="checkin-cell" onclick="toggleCheckIn('${app.id}')" title="点击签到/取消签到">${app.checkedIn ? '<span class="checkin-mark on">✓</span>' : ''}</td>
       <td>
         <span class="status-tag" data-status="${escapeHtml(app.status)}" onclick="openStatusPicker('${app.id}')" style="background:${sInfo.fill};color:${sInfo.fill === sInfo.fg ? '#FFFFFF' : sInfo.fg};">
           ${sInfo.mark ? escapeHtml(sInfo.mark) + ' ' : ''}${escapeHtml(app.status)}
