@@ -1470,17 +1470,9 @@ function createDeviceChip(dev) {
   chip.draggable = isActive;
   const handle = isActive ? '<span class="drag-handle">⋮⋮</span>' : '';
   chip.innerHTML = `${handle}<span class="dot ${dev.enabled ? '' : 'off'}"></span>${escapeHtml(dev.name)}`;
-  chip.onclick = () => {
-    const now = Date.now();
-    // 300ms 内连续点击同一设备视为双击/双点，打开编辑
-    if (state.currentDeviceId === dev.id && lastDeviceClick.id === dev.id && now - lastDeviceClick.time < 300) {
-      lastDeviceClick = { id: null, time: 0 };
-      openDeviceSettings(dev.id);
-      return;
-    }
-    lastDeviceClick = { id: dev.id, time: now };
-    switchDevice(dev.id);
-  };
+  // 单击切换设备；双击（桌面 dblclick / 移动端双点）打开编辑
+  chip.onclick = () => switchDevice(dev.id);
+  chip.ondblclick = () => openDeviceSettings(dev.id);
   chip.addEventListener('dragstart', e => deviceDragStart(e, dev.id));
   chip.addEventListener('dragover', e => deviceDragOver(e, dev.id));
   chip.addEventListener('dragleave', e => deviceDragLeave(e));
@@ -1491,6 +1483,16 @@ function createDeviceChip(dev) {
   chip.addEventListener('touchmove', deviceTouchMove, { passive: false });
   chip.addEventListener('touchend', deviceTouchEnd);
   chip.addEventListener('touchcancel', deviceTouchEnd);
+  // 移动端双点检测：350ms 内连续 tap 同一设备视为双击，打开编辑
+  chip.addEventListener('touchend', () => {
+    const now = Date.now();
+    if (lastDeviceClick.id === dev.id && now - lastDeviceClick.time < 350) {
+      lastDeviceClick = { id: null, time: 0 };
+      openDeviceSettings(dev.id);
+    } else {
+      lastDeviceClick = { id: dev.id, time: now };
+    }
+  });
   return chip;
 }
 function deviceRowType(dev) {
