@@ -1424,12 +1424,19 @@ function loadDateSnapshot(date) {
   return true;
 }
 function maybeRollNewDay() {
-  // 自动日结：如果上次关闭时不是今天，先把旧日期快照保存，再把昨天的 today 移到 yesterday，today 清零
+  // 自动日结：如果上次关闭时不是今天，先把旧日期快照保存，再把昨天的 today 移到 yesterday，today/状态/签到清零
   const today = todayStr();
   if (!state.currentDate || state.currentDate >= today) return;
   snapshotCurrentDate();
+  const defaultStatus = state.statuses[0].name;
   state.devices.forEach(dev => {
-    dev.apps.forEach(app => { app.yesterday = app.today || 0; app.today = 0; app.checkedIn = false; });
+    dev.apps.forEach(app => {
+      app.yesterday = app.today || 0;
+      app.today = 0;
+      app.status = defaultStatus;
+      app.statusTime = '';
+      app.checkedIn = false;
+    });
   });
   state.currentDate = today;
   snapshotCurrentDate();
