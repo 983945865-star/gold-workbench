@@ -2803,7 +2803,7 @@ function hcalNoteGoto() {
 function hcalAppend(line, n) {
   const el = document.getElementById(line === 1 ? 'hcalNoteL1' : 'hcalNoteL2');
   if (!el) return;
-  const tag = n + '号';
+  const tag = String(n);
   const parts = el.value.trim().split('/').filter(Boolean);
   if (parts.includes(tag)) return;
   if (parts.length >= 8) return;
