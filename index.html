@@ -322,7 +322,7 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
 /* ============== 红果漫剧日历 ============== */
 .honguo-btn { display:inline-flex; align-items:center; gap:6px; background:var(--primary); border-color:var(--primary); color:#fff; }
 #view-honguo .toolbar-row { justify-content: center; }
-body:has(#view-honguo.active) .container { padding-top: 0; }
+body.in-honguo .container { padding-top: 0; }
 .hcal-wrap { max-width:430px; width:94%; margin:18px auto 0; }
 .hcal-title { font-size:18px; font-weight:700; color:#E4322B; }
 .hcal-month-big { font-size:32px; font-weight:800; margin:8px 0 10px; }
@@ -1483,6 +1483,7 @@ function switchView(v) {
   document.querySelectorAll('.nav-tabs .nav').forEach(n => n.classList.toggle('active', n.dataset.view === v));
   document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
   document.getElementById('view-' + v).classList.add('active');
+  document.body.classList.toggle('in-honguo', v === 'honguo');
   closeTopMenu();
   if (v === 'stats') renderStats();
 }
