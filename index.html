@@ -321,18 +321,17 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
 
 /* ============== 红果漫剧日历 ============== */
 .honguo-btn { display:inline-flex; align-items:center; gap:6px; background:var(--primary); border-color:var(--primary); color:#fff; }
-.hcal-modal { max-width:430px; width:94%; }
-.hcal-year { display:flex; align-items:center; justify-content:space-between; }
-.hcal-year .icon-btn { color:#E4322B; }
-.hcal-month { font-size:32px; font-weight:800; margin:4px 0 8px; }
+.hcal-wrap { max-width:430px; width:94%; margin:18px auto 0; }
+.hcal-title { font-size:18px; font-weight:700; }
+.hcal-month-big { font-size:32px; font-weight:800; margin:8px 0 10px; }
 .hcal-week { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-size:13px; color:var(--text-dim); padding:8px 0 6px; border-bottom:1px solid var(--border); }
-.hcal-week span:first-child, .hcal-week span:last-child { color:#E4322B; }
+.hcal-week span:first-child, .hcal-week span:last-child { color:var(--primary); }
 .hcal-grid { display:grid; grid-template-columns:repeat(7,1fr); row-gap:16px; padding:14px 2px 6px; }
 .hcal-day { width:36px; height:36px; line-height:36px; text-align:center; margin:0 auto; font-size:17px; font-weight:600; border-radius:50%; cursor:pointer; }
-.hcal-day.weekend { color:#E4322B; }
+.hcal-day.weekend { color:var(--primary); }
 .hcal-day.dim { color:var(--text-light); font-weight:400; }
 .hcal-day.cur { background:var(--primary-soft); color:var(--primary); }
-.hcal-day.today { background:#E4322B; color:#fff; }
+.hcal-day.today { background:var(--primary); color:#fff; }
 .hcal-day:active { transform:scale(.92); }
 
 /* ============== 筛选条 ============== */
@@ -1229,20 +1228,18 @@ table.app-table { width: 100%; border-collapse: collapse; min-width: 620px; }
 </div>
 
 <!-- ============== 模态框：红果漫剧日历（仅阳历） ============== -->
-<div class="modal-backdrop" id="modalHonguo">
-  <div class="modal hcal-modal">
-    <div class="hcal-year">
-      <button class="icon-btn" onclick="shiftHonguoMonth(-12)">‹</button>
-      <h3 id="hcalYear" style="margin:0;font-size:17px;color:#E4322B;">2026年</h3>
-      <button class="icon-btn" onclick="shiftHonguoMonth(12)">›</button>
-    </div>
-    <div id="hcalMonth" class="hcal-month">一月</div>
+<!-- ============== 视图：红果漫剧日历（仅阳历，月份固定） ============== -->
+<div class="view" id="view-honguo">
+  <div class="toolbar-row">
+    <button class="btn" onclick="switchView('workbench')">← 返回</button>
+    <span class="hcal-title" id="hcalMonthTitle"></span>
+    <div class="spacer"></div>
+    <span class="flabel">仅阳历</span>
+  </div>
+  <div class="hcal-wrap">
+    <div class="hcal-month-big" id="hcalMonthBig"></div>
     <div class="hcal-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
     <div class="hcal-grid" id="hcalGrid"></div>
-    <div class="modal-actions" style="margin-top:10px;">
-      <button class="btn small" style="color:#E4322B;" onclick="hcalGoToday()">今天</button>
-      <button class="btn small" onclick="closeModal('modalHonguo')">关闭</button>
-    </div>
   </div>
 </div>
 
@@ -2709,28 +2706,21 @@ function renderDatePickerCalendar() {
 let hcalYm = '';
 const HCAL_CN_MONTH = ['','一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
 function openHonguoCalendar() {
-  hcalYm = (state.currentDate || todayStr()).slice(0, 7);
   renderHonguoCalendar();
-  document.getElementById('modalHonguo').classList.add('show');
-}
-function shiftHonguoMonth(delta) {
-  const [y, m] = hcalYm.split('-').map(Number);
-  const nd = new Date(y, m - 1 + delta, 1);
-  hcalYm = `${nd.getFullYear()}-${String(nd.getMonth() + 1).padStart(2, '0')}`;
-  renderHonguoCalendar();
-}
-function hcalGoToday() {
-  hcalYm = todayStr().slice(0, 7);
-  renderHonguoCalendar();
+  switchView('honguo');
 }
 function hcalSelectDate(ds) {
   changeDate(ds);
-  closeModal('modalHonguo');
+  switchView('workbench');
 }
 function renderHonguoCalendar() {
-  const [y, m] = hcalYm.split('-').map(Number);
-  document.getElementById('hcalYear').textContent = `${y}年`;
-  document.getElementById('hcalMonth').textContent = HCAL_CN_MONTH[m];
+  // 月份固定为工作台当前选中日期所在月（不可切换）
+  const base = (state.currentDate || todayStr()).slice(0, 7);
+  const [y, m] = base.split('-').map(Number);
+  const titleEl = document.getElementById('hcalMonthTitle');
+  const bigEl = document.getElementById('hcalMonthBig');
+  if (titleEl) titleEl.textContent = `${y}年 ${HCAL_CN_MONTH[m]}`;
+  if (bigEl) bigEl.textContent = HCAL_CN_MONTH[m];
   const firstDay = new Date(y, m - 1, 1).getDay();
   const daysInMonth = new Date(y, m, 0).getDate();
   const prevDays = new Date(y, m, 0).getDate();
