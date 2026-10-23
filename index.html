@@ -1231,12 +1231,10 @@ table.app-table { width: 100%; border-collapse: collapse; min-width: 620px; }
 <!-- ============== 视图：红果漫剧日历（仅阳历） ============== -->
 <div class="view" id="view-honguo">
   <div class="toolbar-row">
-    <button class="btn" onclick="switchView('workbench')">← 返回</button>
     <button class="btn small" onclick="shiftHonguoMonth(-1)" title="上一月">‹</button>
     <span class="hcal-title" id="hcalMonthTitle"></span>
     <button class="btn small" onclick="shiftHonguoMonth(1)" title="下一月">›</button>
     <button class="btn small" onclick="hcalGoToday()">今天</button>
-    <div class="spacer"></div>
   </div>
   <div class="hcal-wrap">
     <div class="hcal-month-big" id="hcalMonthBig"></div>
