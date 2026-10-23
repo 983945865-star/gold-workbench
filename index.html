@@ -854,9 +854,10 @@ table.app-table { width: 100%; border-collapse: collapse; min-width: 620px; }
   <div class="nav-tabs">
     <div class="nav active" data-view="workbench" onclick="switchView('workbench')">工作台</div>
     <div class="nav" data-view="stats" onclick="switchView('stats')">统计报表</div>
+    <div class="nav" data-view="honguo" onclick="openHonguoCalendar()">红果漫剧</div>
   </div>
-  <button class="btn small primary" onclick="openSyncModal(); closeTopMenu()">云同步</button>
   <div class="actions" id="topActions">
+    <button class="btn small" onclick="openSyncModal(); closeTopMenu()">云同步</button>
     <button class="btn small" onclick="exportExcel(); closeTopMenu()">导出 Excel</button>
     <button class="btn small" onclick="exportCSV(); closeTopMenu()">导出 CSV</button>
     <button class="btn small" onclick="exportJSON(); closeTopMenu()">备份</button>
@@ -880,7 +881,6 @@ table.app-table { width: 100%; border-collapse: collapse; min-width: 620px; }
         <button onclick="jumpDate(0)">今天</button>
         <button onclick="jumpDate(1)">后一天 →</button>
       </div>
-      <button class="btn honguo-btn" onclick="openHonguoCalendar()">红果漫剧</button>
       <button class="btn primary" onclick="openGoalSetting()">目标设置</button>
       <button class="btn" onclick="openClearDataModal()">清除数据</button>
       <div class="spacer"></div>
