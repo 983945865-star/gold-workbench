@@ -1287,6 +1287,7 @@ table.app-table { width: 100%; border-collapse: collapse; min-width: 620px; }
     <div style="margin-bottom:8px;"><input id="hcalNoteL1" type="text" maxlength="14" placeholder="苹果内容（紫色）" style="width:100%;"></div>
     <div style="margin-bottom:4px;"><input id="hcalNoteL2" type="text" maxlength="14" placeholder="安卓内容（蓝色）" style="width:100%;"></div>
     <div class="modal-actions">
+      <button class="btn small" onclick="hcalNoteClear()">清除</button>
       <button class="btn small" onclick="hcalNoteGoto()">切换到该日</button>
       <button class="btn small primary" onclick="hcalNoteSave()">保存</button>
       <button class="btn small" onclick="closeModal('modalHcalNote')">关闭</button>
@@ -2796,12 +2797,15 @@ function hcalNoteSave() {
   closeModal('modalHcalNote');
   renderHonguoCalendar();
 }
+function hcalNoteClear() {
+  document.getElementById('hcalNoteL1').value = '';
+  document.getElementById('hcalNoteL2').value = '';
+}
 function hcalNoteGoto() {
   closeModal('modalHcalNote');
   hcalSelectDate(hcalNoteDate);
 }
-function hcalAppend(line, n) {
-  const el = document.getElementById(line === 1 ? 'hcalNoteL1' : 'hcalNoteL2');
+function hcalAppend(line, n) {  const el = document.getElementById(line === 1 ? 'hcalNoteL1' : 'hcalNoteL2');
   if (!el) return;
   const tag = String(n);
   const parts = el.value.trim().split('/').filter(Boolean);
